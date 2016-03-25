@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.SchedulerGroup;
 import reactor.core.publisher.TopicProcessor;
 
 import javax.annotation.PostConstruct;
@@ -19,24 +18,24 @@ import javax.annotation.PostConstruct;
 public class PersonReceiver {
 
     private TopicProcessor<Person> personPublisher;
-    private SchedulerGroup schedulerGroup;
     private ObjectMapper objectMapper;
+    private StompPublisher stompPublisher;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PersonReceiver.class);
 
     /**
      * The injected constructor.
      * @param personPublisher the person publisher
-     * @param schedulerGroup the scheduler
+     * @param stompPublisher the stomp publisher
      * @param objectMapper the mapper
      */
     @Autowired
     public PersonReceiver(
             final TopicProcessor<Person> personPublisher,
-            final SchedulerGroup schedulerGroup,
+            final StompPublisher stompPublisher,
             final ObjectMapper objectMapper) {
         this.personPublisher = personPublisher;
-        this.schedulerGroup = schedulerGroup;
+        this.stompPublisher = stompPublisher;
         this.objectMapper = objectMapper;
     }
 
@@ -47,20 +46,19 @@ public class PersonReceiver {
     private void init() {
         personPublisher
                 .map(s -> getPersonString(s))
-                .publishOn(schedulerGroup)
-                .consume(System.out::println);
+                .consume(this::publish);
     }
 
     /**
      * Constructor for injection.
      * @param personPublisher the publisher
-     * @param schedulerGroup the scheduler
+     * @param stompPublisher the stomp publisher
      */
     public PersonReceiver(
             final TopicProcessor<Person> personPublisher,
-            final SchedulerGroup schedulerGroup) {
+            final StompPublisher stompPublisher) {
         this.personPublisher = personPublisher;
-        this.schedulerGroup = schedulerGroup;
+        this.stompPublisher = stompPublisher;
     }
 
     /**
@@ -75,5 +73,14 @@ public class PersonReceiver {
             LOGGER.error("Unable to parse person", e);
         }
         return "";
+    }
+
+    /**
+     * Publish all the things.
+     * @param message the message to publish
+     */
+    private void publish(final String message) {
+        LOGGER.info("publishing:" + message);
+        stompPublisher.sendMessage(message);
     }
 }

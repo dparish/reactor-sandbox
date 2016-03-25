@@ -19,11 +19,13 @@ public class AsyncConfig {
      */
     @Bean()
     public TopicProcessor<Person> personPublisher() {
-        return TopicProcessor.create();
+        TopicProcessor<Person> processor = TopicProcessor.create();
+        processor.publishOn(schedulerGroup());
+        return processor;
     }
 
     /**
-     * Get's a scheduler group
+     * Get's a scheduler group.
      *
      * @return the scheduler group
      */

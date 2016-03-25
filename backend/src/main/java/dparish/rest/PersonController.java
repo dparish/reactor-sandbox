@@ -39,7 +39,7 @@ public class PersonController {
     }
 
     /**
-     * Cleanup on end
+     * Cleanup on end.
      */
     @PreDestroy
     private void destroy() {
